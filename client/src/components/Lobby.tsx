@@ -1,7 +1,8 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
-import { Check, Copy } from 'lucide-react'
+import { Check, Copy, Volume2, VolumeX } from 'lucide-react'
 import { socket } from '../socket'
+import { sfx, setMuted } from '../sound'
 import GlassPanel from './GlassPanel'
 import Button from './Button'
 import Avatar from './Avatar'
@@ -20,8 +21,35 @@ export default function Lobby({ room }: { room: Room }) {
   const missing = MIN_PLAYERS - room.players.length
   const ready = missing <= 0
 
+  const [muted, setMutedState] = useState(false)
+  const prevCount = useRef(room.players.length)
+  const lastMsgId = useRef(room.messages.at(-1)?.id)
+  const myName = room.players.find((p) => p.id === me)?.name
+
   useEffect(() => {
-    const onCountdown = (n: number) => setCountdown(n === 0 ? null : n)
+    if (room.players.length > prevCount.current) sfx.join()
+    else if (room.players.length < prevCount.current) sfx.leave()
+    prevCount.current = room.players.length
+  }, [room.players.length])
+
+  useEffect(() => {
+    const last = room.messages.at(-1)
+    if (last && last.id !== lastMsgId.current && !last.system && last.from !== myName) sfx.message()
+    lastMsgId.current = last?.id
+  }, [room.messages, myName])
+
+  const toggleMute = () => {
+    const next = !muted
+    setMuted(next)
+    setMutedState(next)
+  }
+
+  useEffect(() => {
+    const onCountdown = (n: number) => {
+      setCountdown(n === 0 ? null : n)
+      if (n > 0) sfx.tick()
+      else sfx.go()
+    }
     socket.on('countdown', onCountdown)
     return () => {
       socket.off('countdown', onCountdown)
@@ -36,9 +64,18 @@ export default function Lobby({ room }: { room: Room }) {
 
   return (
     <div className="mx-auto w-full max-w-5xl p-6">
-      <div className="mb-8 flex items-center gap-2.5">
-        <span className="h-2.5 w-2.5 rounded-full bg-accent shadow-[0_0_14px_var(--color-accent)]" />
-        <span className="text-lg font-semibold tracking-tight">Inside Man</span>
+      <div className="mb-8 flex items-center justify-between">
+        <div className="flex items-center gap-2.5">
+          <span className="h-2.5 w-2.5 rounded-full bg-accent shadow-[0_0_14px_var(--color-accent)]" />
+          <span className="text-lg font-semibold tracking-tight">Inside Man</span>
+        </div>
+        <button
+          onClick={toggleMute}
+          className="grid h-9 w-9 cursor-pointer place-items-center rounded-xl border border-border bg-white/5 text-zinc-300 hover:bg-white/10"
+          aria-label="Toggle sound"
+        >
+          {muted ? <VolumeX size={16} /> : <Volume2 size={16} />}
+        </button>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-[1fr_340px]">
@@ -91,7 +128,11 @@ export default function Lobby({ room }: { room: Room }) {
                   : 'Waiting for the host to start the shift…'}
             </p>
             {isHost && (
-              <Button disabled={!ready} onClick={() => socket.emit('game:start')}>
+              <Button
+                className={ready ? 'pulse-glow' : ''}
+                disabled={!ready}
+                onClick={() => socket.emit('game:start')}
+              >
                 Start Shift
               </Button>
             )}

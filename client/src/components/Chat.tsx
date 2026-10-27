@@ -32,15 +32,19 @@ export default function Chat({ messages, onSend }: Props) {
       </div>
 
       <div className="flex-1 space-y-3 overflow-y-auto pr-1">
-        {messages.map((m) => (
-          <div key={m.id} className="flex gap-2.5">
-            <Avatar name={m.from} size={28} />
-            <div>
-              <p className="text-xs font-medium text-zinc-300">{m.from}</p>
-              <p className="text-sm text-zinc-400">{m.text}</p>
-            </div>
-          </div>
-        ))}
+        {messages.map((m) =>
+  m.system ? (
+    <p key={m.id} className="py-1 text-center text-xs text-zinc-500">{m.text}</p>
+  ) : (
+    <div key={m.id} className="flex gap-2.5">
+      <Avatar name={m.from} size={28} />
+      <div>
+        <p className="text-xs font-medium text-zinc-300">{m.from}</p>
+        <p className="text-sm text-zinc-400">{m.text}</p>
+      </div>
+    </div>
+  )
+)}
         <div ref={bottomRef} />
       </div>
 

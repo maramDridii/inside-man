@@ -27,6 +27,21 @@ function makeCode() {
 
 const cleanName = (n) => String(n ?? '').trim().slice(0, 16) || 'Player'
 
+function uniqueName(room, name) {
+  const base = cleanName(name)
+  let n = base
+  let i = 2
+  while (room.players.some((p) => p.name.toLowerCase() === n.toLowerCase())) {
+    n = `${base.slice(0, 13)} ${i++}`
+  }
+  return n
+}
+
+function addSystem(room, text) {
+  room.messages.push({ id: crypto.randomUUID(), from: 'system', text, system: true })
+  room.messages = room.messages.slice(-100)
+}
+
 // what we send to clients (no internal fields)
 const publicRoom = (r) => ({
   code: r.code,
@@ -44,20 +59,23 @@ function leaveRoom(socket) {
   const room = rooms.get(code)
   if (!room) return
 
+  const leaving = room.players.find((p) => p.id === socket.id)
   room.players = room.players.filter((p) => p.id !== socket.id)
   if (room.players.length === 0) {
     rooms.delete(code)
     return
   }
   if (room.hostId === socket.id) room.hostId = room.players[0].id
+  if (leaving) addSystem(room, `${leaving.name} left the workspace`)
   io.to(code).emit('room:update', publicRoom(room))
 }
 
 function joinRoom(socket, room, name) {
-  const player = { id: socket.id, name: cleanName(name), title: randomTitle() }
+  const player = { id: socket.id, name: uniqueName(room, name), title: randomTitle() }
   room.players.push(player)
   socket.join(room.code)
   socket.data.code = room.code
+  addSystem(room, `${player.name} joined as ${player.title}`)
   io.to(room.code).emit('room:update', publicRoom(room))
 }
 

@@ -10,7 +10,7 @@ const input =
   'w-full rounded-xl border border-border bg-white/5 px-3 py-2.5 text-sm outline-none placeholder:text-zinc-600 focus:border-accent/60'
 
 export default function Home({ onJoined }: { onJoined: (r: Room) => void }) {
-  const [name, setName] = useState('')
+  const [name, setName] = useState(localStorage.getItem('im-name') ?? '')
   const [code, setCode] = useState(
     new URLSearchParams(window.location.search).get('room')?.toUpperCase() ?? ''
   )
@@ -21,8 +21,19 @@ export default function Home({ onJoined }: { onJoined: (r: Room) => void }) {
     onJoined(res.room)
   }
 
-  const create = () => socket.emit('room:create', { name }, handle)
-  const join = () => socket.emit('room:join', { code, name }, handle)
+  const create = () => {
+    localStorage.setItem('im-name', name.trim())
+    socket.emit('room:create', { name }, handle)
+  }
+  const join = () => {
+    localStorage.setItem('im-name', name.trim())
+    socket.emit('room:join', { code, name }, handle)
+  }
+  const submit = () => {
+    if (!name.trim()) return
+    if (code.length === 4) join()
+    else create()
+  }
 
   return (
     <div className="grid min-h-full place-items-center p-6">
@@ -38,8 +49,10 @@ export default function Home({ onJoined }: { onJoined: (r: Room) => void }) {
           className={input}
           placeholder="Your name"
           maxLength={16}
+          autoFocus
           value={name}
           onChange={(e) => setName(e.target.value)}
+          onKeyDown={(e) => e.key === 'Enter' && submit()}
         />
 
         <Button className="mt-3 w-full" disabled={!name.trim()} onClick={create}>
@@ -57,6 +70,7 @@ export default function Home({ onJoined }: { onJoined: (r: Room) => void }) {
             maxLength={4}
             value={code}
             onChange={(e) => setCode(e.target.value.toUpperCase())}
+            onKeyDown={(e) => e.key === 'Enter' && submit()}
           />
           <Button variant="ghost" disabled={!name.trim() || code.length < 4} onClick={join}>
             Join
