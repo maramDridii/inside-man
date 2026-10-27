@@ -1,0 +1,23 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Geist Variable", ui-sans-serif, system-ui, sans-serif;
+
+  --color-bg: #0b0b10;
+  --color-surface: rgb(255 255 255 / 0.05);
+  --color-border: rgb(255 255 255 / 0.1);
+  --color-accent: #8b5cf6;   /* electric violet */
+  --color-accent-2: #38bdf8; /* blue */
+  --color-accent-3: #2dd4bf; /* teal */
+  --color-danger: #f43f5e;   /* when something is wrong */
+
+  --radius-card: 24px;
+  --shadow-glow: 0 0 40px rgb(139 92 246 / 0.35);
+}
+
+html, body, #root { height: 100%; }
+body {
+  background: var(--color-bg);
+  color: #f4f4f5;
+  font-family: var(--font-sans);
+}
