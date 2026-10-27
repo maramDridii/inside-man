@@ -1,25 +1,46 @@
-import { useEffect, useState } from 'react'
-import { io } from 'socket.io-client'
+import Background from './components/Background'
+import GlassPanel from './components/GlassPanel'
+import Button from './components/Button'
+import Avatar from './components/Avatar'
+import Badge from './components/Badge'
 
-const socket = io('http://localhost:3001')
+const people = [
+  { name: 'Sarah Kim', title: 'Head of Vibes' },
+  { name: 'Marcus Lee', title: 'Senior DevOps' },
+  { name: 'Yasmine B', title: 'Product Designer' },
+]
 
 export default function App() {
-  const [connected, setConnected] = useState(false)
-
-  useEffect(() => {
-    socket.on('connect', () => setConnected(true))
-    socket.on('disconnect', () => setConnected(false))
-    return () => { socket.off('connect'); socket.off('disconnect') }
-  }, [])
-
   return (
-    <div className="h-full grid place-items-center">
-      <div className="rounded-card border border-border bg-surface px-8 py-6 backdrop-blur-xl shadow-glow">
-        <h1 className="text-2xl font-semibold">Inside Man</h1>
-        <p className="mt-2 text-sm text-zinc-400">
-          Server: {connected ? '🟢 connected' : '🔴 offline'}
-        </p>
+    <>
+      <Background />
+      <div className="grid min-h-full place-items-center p-6">
+        <GlassPanel className="w-full max-w-md p-6">
+          <div className="flex items-center justify-between">
+            <h1 className="text-xl font-semibold">Team Room</h1>
+            <Badge tone="accent" dot>ABCD</Badge>
+          </div>
+
+          <ul className="mt-5 space-y-3">
+            {people.map((p) => (
+              <li key={p.name} className="flex items-center gap-3 rounded-xl bg-white/5 p-3">
+                <Avatar name={p.name} />
+                <div className="flex-1">
+                  <p className="text-sm font-medium">{p.name}</p>
+                  <p className="text-xs text-zinc-400">{p.title}</p>
+                </div>
+                <Badge tone="online" dot>online</Badge>
+              </li>
+            ))}
+          </ul>
+
+          <div className="mt-6 flex gap-3">
+            <Button className="flex-1">Start Shift</Button>
+            <Button variant="ghost">Copy link</Button>
+            <Button variant="danger" disabled>Vote</Button>
+          </div>
+        </GlassPanel>
       </div>
-    </div>
+    </>
   )
 }
